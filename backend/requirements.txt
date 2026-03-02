@@ -1,0 +1,13 @@
+python-dotenv
+langgraph
+langgraph-prebuilt
+langgraph-sdk
+langsmith
+langchain-community
+langchain-core
+langchain-openai
+langchain_groq
+langchain-nvidia-ai-endpoints
+langchain-ollama
+neo4j
+langchain
