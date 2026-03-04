@@ -6,7 +6,7 @@ This repository contains the scripts required to recreate the Knowledge Graph us
 
 - **123 nodes**
 - **550 relationships**
-- **21 orchestrators**
+- **19 orchestrators**
 - **4 evaluation dimensions**
 - **94 evaluation criteria**
 
@@ -166,5 +166,6 @@ Supported Orchestration Operations
  │     ├── proactive
  │     ├── hybrid
 ```
+
 
 ---
