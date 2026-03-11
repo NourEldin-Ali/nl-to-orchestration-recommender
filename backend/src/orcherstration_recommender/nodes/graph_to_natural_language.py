@@ -1,0 +1,43 @@
+import sys
+import os
+import json
+sys.path.append(os.path.join(os.path.dirname(__file__), "../../.."))
+
+from orcherstration_recommender.state import State
+from orcherstration_recommender.prompts.prompts_list import GRAPH_TO_NL_PROMPT
+from langchain_core.messages import SystemMessage
+
+
+def graph_to_natural_language_node(state: State, llm) -> State:
+    """
+    Component 1 — SLM | Graph-to-Natural-Language Transformation
+    Pure structural transformation — no reasoning or inference.
+    Reads  : coverage_annotated_intent, enriched_subgraph
+    Writes : response_draft (evidence-based draft in natural language)
+    """
+    coverage_annotated_intent = state.get("coverage_annotated_intent", {})
+    enriched_subgraph         = state.get("enriched_subgraph", [])
+
+    messages = [
+        SystemMessage(
+            content=GRAPH_TO_NL_PROMPT.format(
+                coverage_annotated_intent=json.dumps(coverage_annotated_intent, indent=2),
+                enriched_subgraph=json.dumps(enriched_subgraph, indent=2),
+            )
+        )
+    ]
+
+    try:
+        response = llm.invoke(messages)
+        response_draft = response.content.strip()
+
+        return {
+            "response_draft": response_draft,
+            "status":         "running",
+        }
+
+    except Exception as e:
+        return {
+            "errors": state.get("errors", []) + [f"graph_to_natural_language_node: {e}"],
+            "status": "failed",
+        }

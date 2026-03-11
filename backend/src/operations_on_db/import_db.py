@@ -5,7 +5,7 @@ sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 from config.neo4j_config import Neo4jConnector
 
 # Fichier JSON exporté depuis Aura
-JSON_FILE = "neo4j_query_table_data_2026-3-4.json"
+JSON_FILE = "neo4j_query_table_data_2026-3-10.json"
 
 def import_to_local(json_file):
     # Lire le JSON et extraire le Cypher
