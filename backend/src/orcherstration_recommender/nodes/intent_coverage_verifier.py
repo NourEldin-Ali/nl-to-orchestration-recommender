@@ -1,9 +1,5 @@
-import sys
-import os
-sys.path.append(os.path.join(os.path.dirname(__file__), "../../.."))
-
-from orcherstration_recommender.state import State
-from config.neo4j_config import Neo4jConnector
+from src.orcherstration_recommender.state import State
+from src.config.neo4j_config import Neo4jConnector
 
 
 def intent_coverage_verifier_node(state: State) -> State:

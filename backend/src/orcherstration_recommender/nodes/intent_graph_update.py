@@ -1,10 +1,6 @@
-import sys
-import os
-sys.path.append(os.path.join(os.path.dirname(__file__), "../../.."))
-
-from orcherstration_recommender.state import State
-from orcherstration_recommender.prompts.prompts_list import INTENT_DETECTION_PROMPT
-from config.neo4j_config import Neo4jConnector
+from src.orcherstration_recommender.state import State
+from src.orcherstration_recommender.prompts.prompts_list import INTENT_DETECTION_PROMPT
+from src.config.neo4j_config import Neo4jConnector
 from langchain_core.messages import SystemMessage
 
 

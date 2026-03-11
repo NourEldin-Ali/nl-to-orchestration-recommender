@@ -1,8 +1,4 @@
-import sys
-import os
-sys.path.append(os.path.join(os.path.dirname(__file__), "../.."))
-
-from orcherstration_recommender.state import State
+from src.orcherstration_recommender.state import State
 
 
 def after_cypher_query_execution(state: State) -> str:

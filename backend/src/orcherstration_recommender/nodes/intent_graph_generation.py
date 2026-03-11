@@ -1,10 +1,6 @@
-import sys
-import os
 import uuid
-sys.path.append(os.path.join(os.path.dirname(__file__), "../../.."))
-
-from orcherstration_recommender.state import State
-from config.neo4j_config import Neo4jConnector
+from src.orcherstration_recommender.state import State
+from src.config.neo4j_config import Neo4jConnector
 
 
 def intent_graph_generation_node(state: State) -> State:

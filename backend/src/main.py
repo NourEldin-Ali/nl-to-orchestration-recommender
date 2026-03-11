@@ -1,9 +1,5 @@
-import sys
-import os
-sys.path.append(os.path.join(os.path.dirname(__file__)))
-
 from langchain_core.messages import HumanMessage
-from orcherstration_recommender.graph import graph
+from src.orcherstration_recommender.graph import graph
 
 
 def run(user_query: str, thread_id: str = "thread-1"):

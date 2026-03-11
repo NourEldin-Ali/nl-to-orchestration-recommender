@@ -1,8 +1,4 @@
-import sys
-import os
-sys.path.append(os.path.join(os.path.dirname(__file__), "../../.."))
-
-from orcherstration_recommender.state import State
+from src.orcherstration_recommender.state import State
 
 
 def cypher_query_generation_node(state: State) -> State:

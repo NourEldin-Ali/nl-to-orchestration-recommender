@@ -1,9 +1,5 @@
-import sys
-import os
-sys.path.append(os.path.join(os.path.dirname(__file__), "../../.."))
-
-from orcherstration_recommender.state import State
-from orcherstration_recommender.prompts.prompts_list import JUSTIFIED_RECOMMENDATION_PROMPT, COVERAGE_GAP_EXPLANATION_PROMPT
+from src.orcherstration_recommender.state import State
+from src.orcherstration_recommender.prompts.prompts_list import JUSTIFIED_RECOMMENDATION_PROMPT, COVERAGE_GAP_EXPLANATION_PROMPT
 from langchain_core.messages import SystemMessage
 
 

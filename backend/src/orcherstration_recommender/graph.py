@@ -1,26 +1,22 @@
-import sys
-import os
-sys.path.append(os.path.join(os.path.dirname(__file__), "../.."))
-
 from functools import partial
 
 from langgraph.graph import StateGraph, END
 from langgraph.checkpoint.memory import MemorySaver
 
-from orcherstration_recommender.state import State
-from orcherstration_recommender.edge import after_cypher_query_execution, after_intent_graph_update
+from src.orcherstration_recommender.state import State
+from src.orcherstration_recommender.edge import after_cypher_query_execution, after_intent_graph_update
 
-from orcherstration_recommender.nodes.intent_extraction import intent_extraction_node
-from orcherstration_recommender.nodes.intent_graph_generation import intent_graph_generation_node
-from orcherstration_recommender.nodes.cypher_query_generation import cypher_query_generation_node
-from orcherstration_recommender.nodes.cypher_query_execution import cypher_query_execution_node
-from orcherstration_recommender.nodes.composition_requirement_explanation import composition_requirement_explanation_node
-from orcherstration_recommender.nodes.intent_graph_update import intent_graph_update_node
-from orcherstration_recommender.nodes.intent_coverage_verifier import intent_coverage_verifier_node
-from orcherstration_recommender.nodes.graph_to_natural_language import graph_to_natural_language_node
-from orcherstration_recommender.nodes.intent_aligned_justification import intent_aligned_justification_node
+from src.orcherstration_recommender.nodes.intent_extraction import intent_extraction_node
+from src.orcherstration_recommender.nodes.intent_graph_generation import intent_graph_generation_node
+from src.orcherstration_recommender.nodes.cypher_query_generation import cypher_query_generation_node
+from src.orcherstration_recommender.nodes.cypher_query_execution import cypher_query_execution_node
+from src.orcherstration_recommender.nodes.composition_requirement_explanation import composition_requirement_explanation_node
+from src.orcherstration_recommender.nodes.intent_graph_update import intent_graph_update_node
+from src.orcherstration_recommender.nodes.intent_coverage_verifier import intent_coverage_verifier_node
+from src.orcherstration_recommender.nodes.graph_to_natural_language import graph_to_natural_language_node
+from src.orcherstration_recommender.nodes.intent_aligned_justification import intent_aligned_justification_node
 
-from config.llm_config import LLMConnector
+from src.config.llm_config import LLMConnector
 
 
 def build_graph():
