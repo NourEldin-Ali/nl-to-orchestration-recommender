@@ -1,6 +1,19 @@
 from src.orcherstration_recommender.state import State
 
 
+def after_start(state: State, one_step: bool = False) -> str:
+    """
+    Edge 0 — after START
+    If one_step is enabled (from input state or default)
+        -> recommandantion_baseline
+    Else
+        -> intent_extraction
+    """
+    if one_step:
+        return "recommandantion_baseline"
+    return "db_schema_discovery"
+
+
 def after_cypher_query_execution(state: State) -> str:
     """
     Edge 4 — after cypher_query_execution_node
