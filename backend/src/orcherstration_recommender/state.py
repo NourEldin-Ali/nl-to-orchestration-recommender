@@ -9,10 +9,20 @@ class State(TypedDict, total=False):
     # ── Conversation history ──────────────────────────────────────────
     messages: Annotated[List[AnyMessage], add_messages]
 
-    # ── Intent (SLM - étape 1) ────────────────────────────────────────
+    # ── DB Discovery ─────────────────────────────────────────────────
+    db_schema:          list        # [(Label)-[:RELATION]->(Label), ...]
+    db_vocabulary:      dict        # {layers, categories, criteria, orchestrators}
+
+    # ── Intent Construction (successive extraction) ───────────────────
     user_query:             str
-    intent_json:            dict        # {layers, category, requirements, used_orchestrators}
-    intent_id:              str         # UUID unique par intent (clé Neo4j)
+    detected_layers:        list        # output node 1
+    detected_category:      str         # output node 2
+    detected_requirements:  list        # output node 3
+    detected_used_orchestrators: list   # output node 4
+    intent_json:            dict        # {layers, category, requirements, used_orchestrators} — assemblé algo
+
+    # ── Intent Graph (Neo4j) ──────────────────────────────────────────
+    intent_id:              str         # UUID unique par intent
     intent_graph_created:   bool
 
     # ── Attributs du nœud Intent ──────────────────────────────────────
@@ -21,14 +31,14 @@ class State(TypedDict, total=False):
     coverage:               str         # FULL | PARTIAL | NONE
     final_recommendation:   str         # SingleCandidate | MultipleCandidates | CompositionOfTools | None
 
-    # ── Reasoner (étape 2) ────────────────────────────────────────────
+    # ── Reasoner ──────────────────────────────────────────────────────
     minimal_cypher_query:   str
     minimal_subgraph:       list
     enriched_cypher_query:  str
     enriched_subgraph:      list
 
     # ── Coverage ──────────────────────────────────────────────────────
-    coverage_annotated_intent: dict     # intent graph annoté avec satisfied par relation
+    coverage_annotated_intent: dict
 
     # ── Output ────────────────────────────────────────────────────────
     response_draft:         str

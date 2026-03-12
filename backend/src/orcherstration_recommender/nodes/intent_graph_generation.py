@@ -7,10 +7,11 @@ def intent_graph_generation_node(state: State) -> State:
     """
     Component 1 — SLM | Intent Graph Generation
     Structured code only — no LLM required.
-    Reads  : intent_json
-    Writes : intent_graph_created, recommendation_policy (default: single_only), attempt_try (default: 1)
+    Reads  : intent_json, db_schema
+    Writes : intent_graph_created, recommendation_policy, attempt_try
     """
     intent_json = state.get("intent_json", {})
+    db_schema   = state.get("db_schema", [])
     intent_id   = str(uuid.uuid4())
 
     layers             = intent_json.get("layers", [])
@@ -18,11 +19,16 @@ def intent_graph_generation_node(state: State) -> State:
     requirements       = intent_json.get("requirements", [])
     used_orchestrators = intent_json.get("used_orchestrators", [])
 
-    # Normalise to list
     if isinstance(layers, str):
         layers = [layers]
     if isinstance(used_orchestrators, str):
         used_orchestrators = [used_orchestrators]
+
+    # ── Extraire les relations depuis db_schema ───────────────────────
+    relations    = _extract_relations(db_schema)
+    covers       = relations.get("covers", "COVERS")
+    has_category = relations.get("has_category", "HAS_CATEGORY")
+    based_on     = relations.get("based_on", "BASED_ON")
 
     driver = Neo4jConnector().get_driver()
 
@@ -43,34 +49,34 @@ def intent_graph_generation_node(state: State) -> State:
 
             # 2. (I)-[:COVERS]->(Layer)
             for layer in layers:
-                session.run("""
-                    MATCH (i:Intent {id: $id})
-                    MERGE (l:Layer {name: $layer})
-                    CREATE (i)-[:COVERS]->(l)
+                session.run(f"""
+                    MATCH (i:Intent {{id: $id}})
+                    MATCH (l:Layer {{name: $layer}})
+                    CREATE (i)-[:{covers}]->(l)
                 """, id=intent_id, layer=layer)
 
             # 3. (I)-[:HAS_CATEGORY]->(Category)
             if category:
-                session.run("""
-                    MATCH (i:Intent {id: $id})
-                    MERGE (c:Category {name: $category})
-                    CREATE (i)-[:HAS_CATEGORY]->(c)
+                session.run(f"""
+                    MATCH (i:Intent {{id: $id}})
+                    MATCH (c:Category {{name: $category}})
+                    CREATE (i)-[:{has_category}]->(c)
                 """, id=intent_id, category=category)
 
             # 4. (I)-[:REQUIRES]->(Criterion)
             for requirement in requirements:
-                session.run("""
-                    MATCH (i:Intent {id: $id})
-                    MERGE (cr:Criterion {name: $requirement})
+                session.run(f"""
+                    MATCH (i:Intent {{id: $id}})
+                    MATCH (cr:Criterion {{name: $requirement}})
                     CREATE (i)-[:REQUIRES]->(cr)
                 """, id=intent_id, requirement=requirement)
 
             # 5. (I)-[:CONTEXT_USES]->(Orchestrator)
             for orchestrator in used_orchestrators:
-                session.run("""
-                    MATCH (i:Intent {id: $id})
-                    MATCH (o:Orchestrator {name: $orchestrator})
-                    CREATE (i)-[:CONTEXT_USES]->(o)
+                session.run(f"""
+                    MATCH (i:Intent {{id: $id}})
+                    MATCH (o:Orchestrator {{name: $orchestrator}})
+                    CREATE (i)-[:{based_on}]->(o)
                 """, id=intent_id, orchestrator=orchestrator)
 
         return {
@@ -90,3 +96,23 @@ def intent_graph_generation_node(state: State) -> State:
 
     finally:
         driver.close()
+
+
+def _extract_relations(db_schema: list) -> dict:
+    """
+    Extrait depuis db_schema les relations pertinentes depuis Orchestrator.
+    """
+    relations = {}
+    for entry in db_schema:
+        if entry.get("from") == "Orchestrator":
+            rel = entry.get("relation", "")
+            to  = entry.get("to", "")
+            if to == "Layer":
+                relations["covers"] = rel
+            elif to == "Category":
+                relations["has_category"] = rel
+            elif to == "Criterion":
+                relations["supports"] = rel
+            elif to == "Orchestrator":
+                relations["based_on"] = rel
+    return relations

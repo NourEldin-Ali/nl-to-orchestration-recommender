@@ -3,62 +3,103 @@ Intent-Driven Orchestration Recommendation System
 Prompts list
 """
 
-# ── 1. Intent Extraction ──────────────────────────────────────────────────────
-INTENT_EXTRACTION_PROMPT = """
+# ── 1. Layer Extraction ───────────────────────────────────────────────────────
+LAYER_EXTRACTION_PROMPT = """
 You are an expert in cloud-edge-IoT orchestration frameworks.
-Your task is to analyze a user request expressed in natural language and extract the orchestration intent as a structured JSON object.
+Your task is to identify the targeted continuum layers from the user request.
 
-The JSON must contain the following fields:
-- "layers": list of targeted continuum layers among ["Cloud", "Edge", "IoT"]. Can contain one or more values.
-- "category": orchestration category, either "Resource & Service Orchestration" or "Flow Orchestration".
-- "requirements": list of FUNCTIONAL capability criteria explicitly or implicitly expressed in the user request. You MUST choose ONLY from the following list:
-
-Available criteria and their meaning:
-- "Deployment": the ability to deploy applications or services
-- "Execution & Monitoring": the ability to execute workloads and monitor their status at runtime
-- "Runtime reconfiguration": the ability to adapt or reconfigure the system at runtime
-- "Configuration": the ability to configure infrastructure or services
-- "Containers": support for container-based workloads (e.g. Docker, Kubernetes)
-- "VMs": support for virtual machine-based workloads
-- "Compute": support for compute resource provisioning
-- "Storage": support for storage resource provisioning
-- "Network": support for network resource provisioning
-- "Resources": general resource orchestration
-- "Services": service orchestration
-- "Multi-Cloud": deployment across multiple cloud providers
-- "Cross-Cloud": interoperability across different cloud environments
-- "Single-Cloud": deployment on a single cloud provider
-- "AWS": support for Amazon Web Services
-- "Azure": support for Microsoft Azure
-- "GCP": support for Google Cloud Platform
-- "IBM Cloud": support for IBM Cloud
-- "Oracle Cloud": support for Oracle Cloud
-- "OpenStack": support for OpenStack
-- "VMware": support for VMware infrastructure
-- "Provider-agnostic": not tied to a specific cloud provider
-- "Provider-specific": tied to a specific cloud provider
-- "Extensibility": support for plugins or extensions
-- "Standard language": use of standard description languages (e.g. TOSCA, YAML)
-- "Proprietary language": use of proprietary description languages
-- "Declarative": declarative application description model
-- "Imperative": imperative application description model
-- "Static": static selection or composition of resources/services
-- "Automatic": automatic selection or composition of resources/services
-- "Hybrid": hybrid architecture (centralized + decentralized)
-- "Centralized": centralized architecture
-- "Decentralized": decentralized architecture
-- "CLI": command-line interface
-- "API": programmatic API interface
-- "GUI": graphical user interface
-- "Documentation availability": availability of official documentation
-
-- "used_orchestrators": list of orchestration tools already used by the user if mentioned, otherwise an empty list.
+Available layers:
+{layers}
 
 Rules:
 - Return ONLY a valid JSON object. No explanation, no markdown, no backticks.
-- Extract ONLY criteria that are explicitly or strongly implicitly required by the user. Do NOT add criteria that are not mentioned or clearly implied.
-- A simple deployment request requires ONLY "Deployment" — do not add unrelated criteria like "API", "Centralized", or "Imperative" unless the user explicitly mentions them.
+- Choose ONLY from the available layers above.
+- Use the exact names as provided.
+- If no layer is explicitly or strongly implicitly mentioned, return an empty list.
+
+Format:
+{{"layers": ["...", "..."]}}
+
+User request:
+{user_query}
+"""
+
+# ── 2. Category Extraction ────────────────────────────────────────────────────
+CATEGORY_EXTRACTION_PROMPT = """
+You are an expert in cloud-edge-IoT orchestration frameworks.
+Your task is to identify the orchestration category from the user request.
+
+The user is targeting the following layers: {detected_layers}
+
+Available categories:
+{categories}
+
+Rules:
+- Return ONLY a valid JSON object. No explanation, no markdown, no backticks.
+- You MUST choose ONLY from the available categories listed above.
+- If the category is not explicitly or strongly implicitly mentioned, return null.
+- NEVER invent or use a value that is not explicitly listed above.
+- The only valid values are exactly those listed in the available categories. Nothing else is acceptable.
+
+Format:
+{{"category": "..."}}
+
+User request:
+{user_query}
+"""
+
+# ── 3. Requirements Extraction ────────────────────────────────────────────────
+REQUIREMENTS_EXTRACTION_PROMPT = """
+You are an expert in cloud-edge-IoT orchestration frameworks.
+Your task is to identify the functional capability criteria from the user request.
+
+The user is targeting the following layers: {detected_layers}
+The orchestration category is: {detected_category}
+
+Available criteria:
+{criteria}
+
+Rules:
+- Return ONLY a valid JSON object. No explanation, no markdown, no backticks.
+- You MUST choose ONLY from the available criteria listed above.
+- NEVER use orchestrator names (e.g. Kubernetes, KubeEdge, Terraform) as requirements.
+- NEVER use layer names (e.g. Cloud, Edge, IoT) as requirements.
+- NEVER use category names (e.g. Flow Orchestration, Resource & Service Orchestration) as requirements.
+- Extract ONLY criteria that are explicitly or strongly implicitly required by the user.
+- Do NOT add criteria that are not mentioned or clearly implied.
+- A simple deployment request requires ONLY "Deployment" — do not add unrelated criteria unless explicitly mentioned.
 - DO NOT include non-functional attributes such as "open-source", "popular", "recent", "well-documented".
+- NEVER invent or use a value that is not explicitly listed in the available criteria above.
+- Use the exact names as provided.
+
+Format:
+{{"requirements": ["...", "..."]}}
+
+User request:
+{user_query}
+"""
+
+# ── 4. Used Orchestrators Extraction ─────────────────────────────────────────
+USED_ORCHESTRATORS_EXTRACTION_PROMPT = """
+You are an expert in cloud-edge-IoT orchestration frameworks.
+Your task is to identify orchestration tools already used or mentioned by the user.
+
+The user is targeting the following layers: {detected_layers}
+The orchestration category is: {detected_category}
+The identified requirements are: {detected_requirements}
+
+Available orchestrators:
+{orchestrators}
+
+Rules:
+- Return ONLY a valid JSON object. No explanation, no markdown, no backticks.
+- Choose ONLY from the available orchestrators above.
+- Only include orchestrators explicitly mentioned by the user as already in use.
+- If none are mentioned, return an empty list.
+- Use the exact names as provided.
+
+Format:
+{{"used_orchestrators": ["...", "..."]}}
 
 User request:
 {user_query}

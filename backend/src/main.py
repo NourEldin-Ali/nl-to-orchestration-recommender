@@ -57,7 +57,7 @@ if __name__ == "__main__":
     # run("I need an open-source orchestrator to deploy my application in the cloud.")
 
     # Scenario 2 — Edge extension
-    # run("We already run Kubernetes in the cloud and want to extend orchestration to edge nodes.")
+    run("We already run Kubernetes in the cloud and want to extend orchestration to edge nodes.")
 
     # Scenario 3 — Telemedicine composition
-    run("I am developing a telemedicine application for connected ambulances...")
+    #run("I am developing a telemedicine application for connected ambulances...")
