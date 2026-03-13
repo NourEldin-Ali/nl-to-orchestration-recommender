@@ -1,5 +1,6 @@
 from src.orcherstration_recommender.state import State
 from src.orcherstration_recommender.prompts.prompts_list import INTENT_DETECTION_PROMPT
+from src.orcherstration_recommender.token_usage import add_token_usage
 from src.config.neo4j_config import Neo4jConnector
 from langchain_core.messages import SystemMessage
 
@@ -65,6 +66,7 @@ def intent_graph_update_node(state: State, llm) -> State:
         "recommendation_policy": recommendation_policy,
         "attempt_try":           attempt_try + 1,
         "status":                "running",
+         "token_usage":           add_token_usage(state, response, "intent_graph_update"),
     }
 
 
@@ -76,3 +78,4 @@ def _extract_has_category_relation(db_schema: list) -> str:
         if entry.get("from") == "Orchestrator" and entry.get("to") == "Category":
             return entry.get("relation", "HAS_CATEGORY")
     return "HAS_CATEGORY"
+       
