@@ -45,9 +45,12 @@ def _extract_token_counts(response: Any) -> dict[str, int]:
     }
 
 
-def add_token_usage(state: dict[str, Any], response: Any, node_name: str) -> dict[str, Any]:
-    counts = _extract_token_counts(response)
-    existing = state.get("token_usage") or {}
+def _merge_token_usage(
+    existing: dict[str, Any],
+    node_name: str,
+    counts: dict[str, int],
+) -> dict[str, Any]:
+    existing = existing or {}
 
     current_totals = existing.get("totals", {})
     current_by_node = existing.get("by_node", {})
@@ -72,3 +75,22 @@ def add_token_usage(state: dict[str, Any], response: Any, node_name: str) -> dic
         "totals": updated_totals,
         "by_node": updated_by_node,
     }
+
+
+def add_token_usage(state: dict[str, Any], response: Any, node_name: str) -> dict[str, Any]:
+    counts = _extract_token_counts(response)
+    existing = state.get("token_usage") or {}
+    return _merge_token_usage(existing, node_name, counts)
+
+
+def ensure_node_token_usage(state: dict[str, Any], node_name: str) -> dict[str, Any]:
+    existing = state.get("token_usage") or {}
+    return _merge_token_usage(
+        existing,
+        node_name,
+        {
+            "input_tokens": 0,
+            "output_tokens": 0,
+            "total_tokens": 0,
+        },
+    )

@@ -1,6 +1,7 @@
 import json
 from src.orcherstration_recommender.state import State
 from src.orcherstration_recommender.prompts.prompts_list import USED_ORCHESTRATORS_EXTRACTION_PROMPT
+from src.orcherstration_recommender.token_usage import add_token_usage
 from langchain_core.messages import SystemMessage
 
 
@@ -47,6 +48,7 @@ def used_orchestrators_extraction_node(state: State, llm) -> State:
         return {
             "detected_used_orchestrators": detected_used_orchestrators,
             "status":                      "running",
+            "token_usage":                 add_token_usage(state, response, "used_orchestrators_extraction"),
         }
 
     except Exception as e:

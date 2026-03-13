@@ -111,7 +111,7 @@ def run(user_query: str, thread_id: str = "thread-1", one_step: bool = True):
 
 if __name__ == "__main__":
     # Scenario 1 - Simple case
-    run("I need an open-source orchestrator to deploy my application in the cloud.")
+    run("I need an open-source orchestrator to deploy my application in the cloud.", one_step=False)
 
     # Scenario 1 — Simple case
     # run("I need an open-source orchestrator to deploy my application in the cloud.")

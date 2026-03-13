@@ -1,6 +1,7 @@
 import json
 from src.orcherstration_recommender.state import State
 from src.orcherstration_recommender.prompts.prompts_list import LAYER_EXTRACTION_PROMPT
+from src.orcherstration_recommender.token_usage import add_token_usage
 from langchain_core.messages import SystemMessage
 
 
@@ -41,6 +42,7 @@ def layer_extraction_node(state: State, llm) -> State:
         return {
             "detected_layers": detected_layers,
             "status":          "running",
+            "token_usage":     add_token_usage(state, response, "layer_extraction"),
         }
 
     except Exception as e:
