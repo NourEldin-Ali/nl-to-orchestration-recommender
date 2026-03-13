@@ -62,9 +62,9 @@ class LLMRunConfig:
 
 DEFAULT_EVALUATION_LLM_CONFIGS = [
     LLMRunConfig(llm_type="nvidia", model_name="qwen/qwen2-7b-instruct"),
-    LLMRunConfig(llm_type="nvidia", model_name="meta/llama-3.3-70b-instruct"),
-    LLMRunConfig(llm_type="nvidia", model_name="mistralai/mistral-7b-instruct-v0.3"),
-    LLMRunConfig(llm_type="nvidia", model_name="moonshotai/kimi-k2-instruct"),
+    # LLMRunConfig(llm_type="nvidia", model_name="meta/llama-3.3-70b-instruct"),
+    # LLMRunConfig(llm_type="nvidia", model_name="mistralai/mistral-7b-instruct-v0.3"),
+    # LLMRunConfig(llm_type="nvidia", model_name="moonshotai/kimi-k2-instruct"),
 ]
 
 
@@ -142,13 +142,16 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--output",
         type=str,
-        default="../output",
-        help="Output .xlsx path. Default: evaluation_results_YYYYMMDD_HHMMSS.xlsx",
+        default="",
+        help=(
+            "Output .xlsx file name or path. The final file is always written inside "
+            "--per-run-dir. Default file name: evaluation_results_YYYYMMDD_HHMMSS.xlsx"
+        ),
     )
     parser.add_argument(
         "--per-run-dir",
         type=str,
-        default="",
+        default="../output",
         help="Directory to save one detailed Excel file per run. Default: <output_stem>_per_run",
     )
     return parser.parse_args()
@@ -641,8 +644,9 @@ def main() -> None:
     llm_configs = resolve_llm_configs(args.llms)
     input_queries = load_inputs(args.inputs, args.inputs_file)
     pipelines = list(dict.fromkeys([pipeline.lower() for pipeline in args.pipelines]))
-    output_path = build_output_path(args.output)
-    per_run_dir = build_per_run_dir(output_path, args.per_run_dir)
+    requested_output_path = build_output_path(args.output)
+    per_run_dir = build_per_run_dir(requested_output_path, args.per_run_dir)
+    output_path = per_run_dir / requested_output_path.name
 
     total_runs = len(llm_configs) * len(input_queries) * len(pipelines) * args.repeats
     print(f"Starting evaluation with {total_runs} run(s)...")
