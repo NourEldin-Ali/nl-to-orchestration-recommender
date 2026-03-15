@@ -61,10 +61,31 @@ class LLMRunConfig:
 
 
 DEFAULT_EVALUATION_LLM_CONFIGS = [
+    LLMRunConfig(llm_type="nvidia", model_name="mistralai/mistral-large-3-675b-instruct-2512"),
+    LLMRunConfig(llm_type="nvidia", model_name="mistralai/devstral-2-123b-instruct-2512"),
+    LLMRunConfig(llm_type="nvidia", model_name="nvidia/nemotron-3-super-120b-a12b"),
+    LLMRunConfig(llm_type="nvidia", model_name="meta/llama-3.3-70b-instruct"),
+    LLMRunConfig(llm_type="nvidia", model_name="meta/llama-3.1-405b-instruct"),
+    LLMRunConfig(llm_type="nvidia", model_name="qwen/qwen3.5-397b-a17b"),
+    LLMRunConfig(llm_type="nvidia", model_name="qwen/qwen3-next-80b-a3b-instruct"),
+    LLMRunConfig(llm_type="nvidia", model_name="qwen/qwen3.5-122b-a10b"),
+    LLMRunConfig(llm_type="nvidia", model_name="deepseek-ai/deepseek-v3.2"),
+    LLMRunConfig(llm_type="nvidia", model_name="openai/gpt-oss-120b"),
+    LLMRunConfig(llm_type="nvidia", model_name="openai/gpt-oss-20b"),
+    LLMRunConfig(llm_type="nvidia", model_name="meta/llama-3.2-3b-instruct"),
+    LLMRunConfig(llm_type="nvidia", model_name="meta/llama-3.1-8b-instruct"),
+    LLMRunConfig(llm_type="nvidia", model_name="mistralai/mistral-small-24b-instruct"),
+    LLMRunConfig(llm_type="nvidia", model_name="mistralai/mistral-7b-instruct-v0.3"),
+    LLMRunConfig(llm_type="nvidia", model_name="microsoft/phi-4-mini-instruct"),
+    LLMRunConfig(llm_type="nvidia", model_name="microsoft/phi-3-small-128k-instruct"),
+    LLMRunConfig(llm_type="nvidia", model_name="google/gemma-3-27b-it"),        
+    LLMRunConfig(llm_type="nvidia", model_name="google/gemma-3-1b-it"),
+    LLMRunConfig(llm_type="nvidia", model_name="qwen/qwen2.5-7b-instruct"),
     LLMRunConfig(llm_type="nvidia", model_name="qwen/qwen2-7b-instruct"),
-    # LLMRunConfig(llm_type="nvidia", model_name="meta/llama-3.3-70b-instruct"),
-    # LLMRunConfig(llm_type="nvidia", model_name="mistralai/mistral-7b-instruct-v0.3"),
-    # LLMRunConfig(llm_type="nvidia", model_name="moonshotai/kimi-k2-instruct"),
+    LLMRunConfig(llm_type="nvidia", model_name="microsoft/phi-3-small-128k-instruct"),
+    LLMRunConfig(llm_type="nvidia", model_name="moonshotai/kimi-k2.5"),
+    LLMRunConfig(llm_type="nvidia", model_name="moonshotai/kimi-k2-instruct"),
+    LLMRunConfig(llm_type="nvidia", model_name="nvidia/nvidia-nemotron-nano-9b-v2"),
 ]
 
 

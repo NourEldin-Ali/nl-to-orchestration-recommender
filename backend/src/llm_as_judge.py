@@ -20,8 +20,12 @@ class LLMRunConfig:
 
 
 DEFAULT_JUDGE_LLM_CONFIGS = [
-    LLMRunConfig(llm_type="nvidia", model_name="qwen/qwen2-7b-instruct"),
-    # LLMRunConfig(llm_type="openai", model_name="gpt-4.1-mini"),
+    LLMRunConfig(llm_type="nvidia", model_name="mistralai/mistral-large-3-675b-instruct-2512"),
+    LLMRunConfig(llm_type="nvidia", model_name="mistralai/devstral-2-123b-instruct-2512"),
+    LLMRunConfig(llm_type="nvidia", model_name="nvidia/nemotron-3-super-120b-a12b"),
+    LLMRunConfig(llm_type="nvidia", model_name="qwen/qwen3.5-122b-a10b"),
+    LLMRunConfig(llm_type="nvidia", model_name="openai/gpt-oss-120b"),
+
 ]
 
 # Edit this list directly.
