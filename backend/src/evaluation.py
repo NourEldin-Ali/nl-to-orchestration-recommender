@@ -26,6 +26,13 @@ PIPELINE_CONFIGS = {
     },
 }
 
+PIPELINE_HELP_TEXT = ", ".join(
+    f"{name} -> "
+    f"one_step={config['one_step']}, "
+    f"based_on_existing_orchestrator={config['based_on_existing_orchestrator']}"
+    for name, config in PIPELINE_CONFIGS.items()
+)
+
 EXCEL_CELL_MAX_CHARS = 32000
 
 DEFAULT_INPUTS = [
@@ -177,12 +184,8 @@ def parse_args() -> argparse.Namespace:
         "--pipelines",
         nargs="+",
         choices=sorted(PIPELINE_CONFIGS.keys()),
-        default=["llm", "slm"],
-        help=(
-            "llm -> one_step baseline, "
-            "slm -> full graph, "
-            "llm_existing -> baseline grounded on detected existing orchestrators"
-        ),
+        default=list(PIPELINE_CONFIGS.keys()),
+        help=PIPELINE_HELP_TEXT,
     )
     parser.add_argument(
         "--repeats",
