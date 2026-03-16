@@ -15,21 +15,15 @@ def recommandantion_baseline(state: State, llm) -> State:
 
     In the generic one-step mode it uses only the user query. In the
     based-on-existing-orchestrator mode it also receives the vocabulary-backed
-    orchestrator list and the extracted already-used orchestrator(s).
+    orchestrator list from the database.
     """
     user_query = state.get("user_query", "")
     db_vocabulary = state.get("db_vocabulary", {})
     available_orchestrators = db_vocabulary.get("orchestrators", [])
-    detected_used_orchestrators = state.get("detected_used_orchestrators", [])
     available_orchestrators_payload = (
         json.dumps(available_orchestrators, indent=2)
         if available_orchestrators
         else "Not provided"
-    )
-    detected_used_orchestrators_payload = (
-        json.dumps(detected_used_orchestrators, indent=2)
-        if detected_used_orchestrators
-        else "None detected"
     )
 
     messages = [
@@ -37,7 +31,6 @@ def recommandantion_baseline(state: State, llm) -> State:
             content=RECOMMENDATION_BASELINE_PROMPT.format(
                 user_query=user_query,
                 available_orchestrators=available_orchestrators_payload,
-                detected_used_orchestrators=detected_used_orchestrators_payload,
             )
         )
     ]

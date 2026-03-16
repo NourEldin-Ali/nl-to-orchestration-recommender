@@ -34,29 +34,9 @@ def after_db_vocabulary(
     """
     Edge 1 - after db_vocabulary.
 
-    If based_on_existing_orchestrator is enabled, extract the already used
-    orchestrator before calling the baseline node. Otherwise continue with the
-    full extraction pipeline.
-    """
-    use_based_on_existing = state.get(
-        "based_on_existing_orchestrator",
-        based_on_existing_orchestrator,
-    )
-    if use_based_on_existing:
-        return "used_orchestrators_extraction"
-    return "layer_extraction"
-
-
-def after_used_orchestrators_extraction(
-    state: State,
-    based_on_existing_orchestrator: bool = False,
-) -> str:
-    """
-    Edge 2 - after used_orchestrators_extraction.
-
-    The baseline-existing mode stops here and hands the extracted existing
-    orchestrator(s) to the baseline node. The full graph continues to
-    intent_combination.
+    If based_on_existing_orchestrator is enabled, send the full orchestrator
+    vocabulary directly to the baseline node. Otherwise continue with the full
+    extraction pipeline.
     """
     use_based_on_existing = state.get(
         "based_on_existing_orchestrator",
@@ -64,7 +44,7 @@ def after_used_orchestrators_extraction(
     )
     if use_based_on_existing:
         return "recommandantion_baseline"
-    return "intent_combination"
+    return "layer_extraction"
 
 
 def after_cypher_query_execution(state: State) -> str:
