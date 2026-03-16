@@ -7,9 +7,11 @@ from langgraph.graph import END, START, StateGraph
 
 from src.config.llm_config import LLMConnector
 from src.orcherstration_recommender.edge import (
+    after_db_vocabulary,
     after_cypher_query_execution,
     after_intent_graph_update,
     after_start,
+    after_used_orchestrators_extraction,
 )
 from src.orcherstration_recommender.execution_timing import add_execution_timing
 from src.orcherstration_recommender.nodes.category_extraction import (
@@ -86,7 +88,14 @@ def timed_node(node_name: str, node_fn: Callable[[State], dict]) -> Callable[[St
     return _wrapped
 
 
-def build_graph(one_step: bool = False):
+def build_graph(
+    one_step: bool = False,
+    based_on_existing_orchestrator: bool = False,
+    based_on_exiting_orchestrator: bool | None = None,
+):
+    if based_on_exiting_orchestrator is not None:
+        based_on_existing_orchestrator = based_on_exiting_orchestrator
+
     llm = LLMConnector()()
     builder = StateGraph(State)
 
@@ -174,11 +183,9 @@ def build_graph(one_step: bool = False):
     )
 
     builder.add_edge("db_schema_discovery", "db_vocabulary")
-    builder.add_edge("db_vocabulary", "layer_extraction")
     builder.add_edge("layer_extraction", "category_extraction")
     builder.add_edge("category_extraction", "requirements_extraction")
     builder.add_edge("requirements_extraction", "used_orchestrators_extraction")
-    builder.add_edge("used_orchestrators_extraction", "intent_combination")
     builder.add_edge("intent_combination", "intent_graph_generation")
     builder.add_edge("recommandantion_baseline", END)
     builder.add_edge("intent_graph_generation", "cypher_query_generation")
@@ -190,10 +197,38 @@ def build_graph(one_step: bool = False):
 
     builder.add_conditional_edges(
         START,
-        partial(after_start, one_step=one_step),
+        partial(
+            after_start,
+            one_step=one_step,
+            based_on_existing_orchestrator=based_on_existing_orchestrator,
+        ),
         {
             "recommandantion_baseline": "recommandantion_baseline",
             "db_schema_discovery": "db_schema_discovery",
+        },
+    )
+
+    builder.add_conditional_edges(
+        "db_vocabulary",
+        partial(
+            after_db_vocabulary,
+            based_on_existing_orchestrator=based_on_existing_orchestrator,
+        ),
+        {
+            "used_orchestrators_extraction": "used_orchestrators_extraction",
+            "layer_extraction": "layer_extraction",
+        },
+    )
+
+    builder.add_conditional_edges(
+        "used_orchestrators_extraction",
+        partial(
+            after_used_orchestrators_extraction,
+            based_on_existing_orchestrator=based_on_existing_orchestrator,
+        ),
+        {
+            "recommandantion_baseline": "recommandantion_baseline",
+            "intent_combination": "intent_combination",
         },
     )
 

@@ -11,15 +11,52 @@ from pathlib import Path
 from time import perf_counter
 from typing import Any, Iterable
 
-PIPELINE_TO_ONE_STEP = {
-    "llm": True,   # baseline single-step graph
-    "slm": False,  # full multi-step graph
+PIPELINE_CONFIGS = {
+    "one_step": {
+        "one_step": True,
+        "based_on_existing_orchestrator": False,
+    },
+    # "KB": {
+    #     "one_step": False,
+    #     "based_on_existing_orchestrator": False,
+    # },
+    "one_step_with_orchestrator": {
+        "one_step": False,
+        "based_on_existing_orchestrator": True,
+    },
 }
 
 EXCEL_CELL_MAX_CHARS = 32000
 
 DEFAULT_INPUTS = [
     "I need an open-source orchestrator to deploy my application in the cloud.",
+    (
+            "I am planning to prepare the infrastructure for my cloud application from "
+            "scratch. I need a cloud orchestrator that supports multi-cloud deployment "
+            "across AWS and Azure, and that can provision and configure the infrastructure."
+        ),
+        (
+            "I am a doctoral student looking for recent and recognized cloud-edge "
+            "orchestration frameworks."
+        ),
+         (
+            "We already run Kubernetes in the cloud and want to extend orchestration to "
+            "edge nodes, while supporting deployment, monitoring, and runtime control "
+            "across cloud and edge."
+        ),
+        (
+            "I am developing a telemedicine application for connected ambulances. The "
+            "system collects real-time patient data from medical IoT sensors inside the "
+            "ambulance. Critical data must be processed locally at the Edge for "
+            "low-latency alerts, while selected information is sent to the Cloud for "
+            "advanced analytics, storage, and remote monitoring by hospital doctors. I am "
+            "therefore looking for an open source orchestration solution suitable to "
+            "deploy and manage this multi-layer telemedicine application."
+        ),
+        (
+            "I want one single tool that handles provisioning, configuration, service "
+            "orchestration, workflow orchestration, and covers cloud, edge, and IoT."
+        ),
 ]
 
 RUN_HEADERS = [
@@ -30,6 +67,7 @@ RUN_HEADERS = [
     "model_name",
     "pipeline",
     "one_step",
+    "based_on_existing_orchestrator",
     "repeat_index",
     "query_index",
     "thread_id",
@@ -138,9 +176,13 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--pipelines",
         nargs="+",
-        choices=sorted(PIPELINE_TO_ONE_STEP.keys()),
+        choices=sorted(PIPELINE_CONFIGS.keys()),
         default=["llm", "slm"],
-        help="llm -> one_step=True, slm -> one_step=False",
+        help=(
+            "llm -> one_step baseline, "
+            "slm -> full graph, "
+            "llm_existing -> baseline grounded on detected existing orchestrators"
+        ),
     )
     parser.add_argument(
         "--repeats",
@@ -237,6 +279,7 @@ def temporary_llm_env(llm_type: str, model_name: str):
 def run_graph_once(
     user_query: str,
     one_step: bool,
+    based_on_existing_orchestrator: bool,
     thread_id: str,
     auto_human_response: str,
     max_human_turns: int,
@@ -244,9 +287,20 @@ def run_graph_once(
     from langchain_core.messages import HumanMessage
     from src.orcherstration_recommender.graph import build_graph
 
-    graph = build_graph(one_step=one_step)
+    graph = build_graph(
+        one_step=one_step,
+        based_on_existing_orchestrator=based_on_existing_orchestrator,
+    )
     config = {"configurable": {"thread_id": thread_id}}
-    state = graph.invoke({"user_query": user_query, "messages": []}, config=config)
+    state = graph.invoke(
+        {
+            "user_query": user_query,
+            "messages": [],
+            "one_step": one_step,
+            "based_on_existing_orchestrator": based_on_existing_orchestrator,
+        },
+        config=config,
+    )
 
     if not isinstance(state, dict):
         return (
@@ -307,6 +361,7 @@ def build_run_row(
     human_turns: int,
     wall_clock_seconds: float,
 ) -> dict[str, Any]:
+    pipeline_config = PIPELINE_CONFIGS[pipeline]
     token_usage = state.get("token_usage", {}) if isinstance(state, dict) else {}
     if not isinstance(token_usage, dict):
         token_usage = {}
@@ -330,7 +385,8 @@ def build_run_row(
         "llm_type": llm_cfg.llm_type,
         "model_name": llm_cfg.model_name,
         "pipeline": pipeline.upper(),
-        "one_step": PIPELINE_TO_ONE_STEP[pipeline],
+        "one_step": pipeline_config["one_step"],
+        "based_on_existing_orchestrator": pipeline_config["based_on_existing_orchestrator"],
         "repeat_index": repeat_index,
         "query_index": query_index,
         "thread_id": thread_id,
@@ -498,6 +554,7 @@ def write_run_detail_excel(output_dir: Path, row: dict[str, Any]) -> Path:
         "model_name",
         "pipeline",
         "one_step",
+        "based_on_existing_orchestrator",
         "repeat_index",
         "query_index",
         "thread_id",
@@ -677,7 +734,9 @@ def main() -> None:
 
     for llm_cfg in llm_configs:
         for pipeline in pipelines:
-            one_step = PIPELINE_TO_ONE_STEP[pipeline]
+            pipeline_config = PIPELINE_CONFIGS[pipeline]
+            one_step = pipeline_config["one_step"]
+            based_on_existing_orchestrator = pipeline_config["based_on_existing_orchestrator"]
             for repeat_index in range(1, args.repeats + 1):
                 for query_index, user_query in enumerate(input_queries, start=1):
                     run_id += 1
@@ -702,6 +761,7 @@ def main() -> None:
                             state, human_turns = run_graph_once(
                                 user_query=user_query,
                                 one_step=one_step,
+                                based_on_existing_orchestrator=based_on_existing_orchestrator,
                                 thread_id=thread_id,
                                 auto_human_response=args.auto_human_response,
                                 max_human_turns=args.max_human_turns,

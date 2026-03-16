@@ -9,6 +9,9 @@ class State(TypedDict, total=False):
     # ── Conversation history ──────────────────────────────────────────
     messages: Annotated[List[AnyMessage], add_messages]
 
+    one_step: bool
+    based_on_existing_orchestrator: bool
+
     # ── DB Discovery ─────────────────────────────────────────────────
     db_schema:          list        # [(Label)-[:RELATION]->(Label), ...]
     db_vocabulary:      dict        # {layers, categories, criteria, orchestrators}

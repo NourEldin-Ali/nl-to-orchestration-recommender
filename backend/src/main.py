@@ -56,16 +56,33 @@ def _print_execution_timing(state: dict) -> None:
             )
 
 
-def run(user_query: str, thread_id: str = "thread-1", one_step: bool = True):
+def run(
+    user_query: str,
+    thread_id: str = "thread-1",
+    one_step: bool = True,
+    based_on_existing_orchestrator: bool = False,
+    based_on_exiting_orchestrator: bool | None = None,
+):
+    if based_on_exiting_orchestrator is not None:
+        based_on_existing_orchestrator = based_on_exiting_orchestrator
+
     config = {"configurable": {"thread_id": thread_id}}
 
     print("\n" + "=" * 60)
     print(f"USER QUERY: {user_query}")
     print("=" * 60)
-    graph = build_graph(one_step=one_step)
+    graph = build_graph(
+        one_step=one_step,
+        based_on_existing_orchestrator=based_on_existing_orchestrator,
+    )
     # Initial run
     state = graph.invoke(
-        {"user_query": user_query, "messages": []},
+        {
+            "user_query": user_query,
+            "messages": [],
+            "one_step": one_step,
+            "based_on_existing_orchestrator": based_on_existing_orchestrator,
+        },
         config=config,
     )
 
@@ -117,7 +134,11 @@ if __name__ == "__main__":
     # run("I need an open-source orchestrator to deploy my application in the cloud.")
 
     # Scenario 2 — Edge extension
-    run("We already run Kubernetes in the cloud and want to extend orchestration to edge nodes.")
+    run(
+        "We already run Kubernetes in the cloud and want to extend orchestration to edge nodes.",
+        one_step=False,
+        based_on_existing_orchestrator=True,
+    )
 
     # Scenario 3 — Telemedicine composition
     #run("I am developing a telemedicine application for connected ambulances...")
