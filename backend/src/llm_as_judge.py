@@ -21,10 +21,10 @@ class LLMRunConfig:
 
 DEFAULT_JUDGE_LLM_CONFIGS = [
     LLMRunConfig(llm_type="nvidia", model_name="mistralai/mistral-large-3-675b-instruct-2512"),
-    LLMRunConfig(llm_type="nvidia", model_name="mistralai/devstral-2-123b-instruct-2512"),
-    LLMRunConfig(llm_type="nvidia", model_name="nvidia/nemotron-3-super-120b-a12b"),
-    LLMRunConfig(llm_type="nvidia", model_name="qwen/qwen3.5-122b-a10b"),
-    LLMRunConfig(llm_type="nvidia", model_name="openai/gpt-oss-120b"),
+    # LLMRunConfig(llm_type="nvidia", model_name="mistralai/devstral-2-123b-instruct-2512"),
+    # LLMRunConfig(llm_type="nvidia", model_name="nvidia/nemotron-3-super-120b-a12b"),
+    # LLMRunConfig(llm_type="nvidia", model_name="qwen/qwen3.5-122b-a10b"),
+    # LLMRunConfig(llm_type="nvidia", model_name="openai/gpt-oss-120b"),
 
 ]
 
@@ -134,19 +134,25 @@ CRITERIA = [
     "completeness",
 ]
 
-RATING_LABEL = {
-    1: "Weak",
-    2: "Acceptable",
-    3: "Excellent",
+RATING_LABELS = {
+    1: "Incorrect",
+    2: "Mostly incorrect",
+    3: "Acceptable",
+    4: "Good",
+    5: "Excellent",
 }
+
+VALID_SCORES = tuple(sorted(RATING_LABELS.keys()))
 
 JUDGE_PROMPT = """
 You are evaluating orchestration-tool recommendations against a gold standard.
 
 Score each criterion with:
-1 = Weak
-2 = Acceptable
-3 = Excellent
+1 = Incorrect: the recommendation is incorrect, largely incomplete, or poorly justified with respect to the scenario or the gold standard.
+2 = Mostly incorrect: the recommendation contains major issues or omissions and does not adequately address the scenario requirements.
+3 = Acceptable: the recommendation is generally relevant but remains partially incomplete or insufficiently justified.
+4 = Good: the recommendation is mostly appropriate and reasonably justified, with only minor limitations.
+5 = Excellent: the recommendation is fully relevant, complete, and clearly justified with respect to the scenario and the gold standard.
 
 Criteria:
 - technical_correctness: whether the recommendation is technically appropriate.
@@ -159,7 +165,7 @@ Rules:
 - Use the expected answer as the gold standard.
 - Penalize hallucinated tools, unsupported claims, and recommendations outside the project tool set.
 - Missing tools or capabilities implied by the expected answer must reduce completeness.
-- If the answer is empty, failed, or unusable, all scores must be 1.
+- This judge is only used when a candidate response is available; failed or empty runs are skipped upstream.
 - Output JSON only.
 
 Return exactly:
@@ -196,7 +202,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--input-excel",
         type=str,
-        default=r"../output/evaluation_results_20260312_092447.xlsx",
+        default=r"../output/generation/evaluation_results_filtered_data.xlsx",
         help="Evaluation workbook path. Default: latest evaluation_results_*.xlsx in ../output",
     )
     parser.add_argument("--sheet-name", type=str, default="runs", help="Default: runs")
@@ -309,16 +315,6 @@ def resolve_input_excel(raw_input: str) -> Path:
     return candidates[0]
 
 
-def auto_weak_result(reason: str) -> dict[str, Any]:
-    return {
-        criterion: {
-            "score": 1,
-            "justification": reason,
-        }
-        for criterion in CRITERIA
-    } | {"overall_summary": reason}
-
-
 def extract_json_object(text: str) -> str:
     cleaned = text.strip()
     if cleaned.startswith("```"):
@@ -338,7 +334,7 @@ def validate_judge_response(data: dict[str, Any]) -> dict[str, Any]:
             raise ValueError(f"Missing criterion '{criterion}' in judge output.")
         score = item.get("score")
         justification = str(item.get("justification", "")).strip()
-        if score not in (1, 2, 3):
+        if score not in VALID_SCORES:
             raise ValueError(f"Invalid score for '{criterion}': {score}")
         if not justification:
             raise ValueError(f"Missing justification for '{criterion}'.")
@@ -372,7 +368,7 @@ def salvage_judge_response(text: str) -> dict[str, Any]:
             raise ValueError(f"Could not salvage criterion '{criterion}'.")
 
         block = payload[start:end]
-        score_match = re.search(r'"score"\s*:\s*([123])', block)
+        score_match = re.search(r'"score"\s*:\s*([1-5])\b', block)
         justification_match = re.search(r'"justification"\s*:\s*"', block)
         if not score_match or not justification_match:
             raise ValueError(f"Could not salvage criterion '{criterion}'.")
@@ -442,14 +438,10 @@ def judge_with_retry(llm: Any, payload: dict[str, Any]) -> dict[str, Any]:
         try:
             return parse_judge_response(retry_text)
         except Exception as second_error:
-            print(
-                "  warning: judge output could not be parsed; "
-                "falling back to Weak scores."
-            )
-            return auto_weak_result(
+            raise ValueError(
                 f"Judge output parse failure. First error: {first_error}. "
                 f"Second error: {second_error}."
-            )
+            ) from second_error
 
 
 def overall_score(result: dict[str, Any]) -> float:
@@ -457,11 +449,62 @@ def overall_score(result: dict[str, Any]) -> float:
 
 
 def overall_rating(score: float) -> str:
-    if score < 1.5:
-        return RATING_LABEL[1]
-    if score < 2.5:
-        return RATING_LABEL[2]
-    return RATING_LABEL[3]
+    for current_score in VALID_SCORES:
+        if score < current_score + 0.5:
+            return RATING_LABELS[current_score]
+    return RATING_LABELS[max(VALID_SCORES)]
+
+
+def build_judge_row(
+    run_row: dict[str, Any],
+    judge_cfg: LLMRunConfig,
+    result: dict[str, Any] | None,
+) -> dict[str, Any]:
+    row = {
+        "run_id": run_row.get("run_id"),
+        "pipeline": run_row.get("pipeline"),
+        "candidate_model": run_row.get("model_name"),
+        "user_query": run_row.get("user_query"),
+        "judge_llm_type": judge_cfg.llm_type,
+        "judge_model_name": judge_cfg.model_name,
+    }
+    if result is None:
+        return row | {
+            "technical_correctness_score": "",
+            "technical_correctness_justification": "",
+            "requirement_coverage_score": "",
+            "requirement_coverage_justification": "",
+            "explanation_groundedness_score": "",
+            "explanation_groundedness_justification": "",
+            "architectural_integration_score": "",
+            "architectural_integration_justification": "",
+            "completeness_score": "",
+            "completeness_justification": "",
+            "overall_score": "",
+            "overall_rating": "",
+            "overall_summary": "",
+        }
+
+    score = overall_score(result)
+    return row | {
+        "technical_correctness_score": result["technical_correctness"]["score"],
+        "technical_correctness_justification": result["technical_correctness"]["justification"],
+        "requirement_coverage_score": result["requirement_coverage"]["score"],
+        "requirement_coverage_justification": result["requirement_coverage"]["justification"],
+        "explanation_groundedness_score": result["explanation_groundedness"]["score"],
+        "explanation_groundedness_justification": result["explanation_groundedness"][
+            "justification"
+        ],
+        "architectural_integration_score": result["architectural_integration"]["score"],
+        "architectural_integration_justification": result["architectural_integration"][
+            "justification"
+        ],
+        "completeness_score": result["completeness"]["score"],
+        "completeness_justification": result["completeness"]["justification"],
+        "overall_score": score,
+        "overall_rating": overall_rating(score),
+        "overall_summary": result["overall_summary"],
+    }
 
 
 def build_llm(llm_cfg: LLMRunConfig) -> Any:
@@ -496,63 +539,33 @@ def judge_runs(
             status = str(run_row.get("status") or "").strip().lower()
 
             if status != "done" or not answer:
-                result = auto_weak_result(
-                    f"Run status='{status or 'unknown'}' or final_response is empty."
-                )
-            else:
-                payload = {
-                    "scenario": {
-                        "user_query": run_row.get("user_query"),
-                    },
-                    "gold_standard": {"expected_answer": ground_truth.get("expected_answer", "")},
-                    "candidate": {
-                        "pipeline": run_row.get("pipeline"),
-                        "candidate_model": run_row.get("model_name"),
-                        "response": answer,
-                    },
-                }
+                print("    skipped: run status is not done or final_response is empty.")
+                results.append(build_judge_row(run_row, judge_cfg, None))
+                continue
 
-                cache_key = json.dumps(payload, ensure_ascii=False, sort_keys=True)
+            payload = {
+                "scenario": {
+                    "user_query": run_row.get("user_query"),
+                },
+                "gold_standard": {"expected_answer": ground_truth.get("expected_answer", "")},
+                "candidate": {
+                    "pipeline": run_row.get("pipeline"),
+                    "candidate_model": run_row.get("model_name"),
+                    "response": answer,
+                },
+            }
+
+            cache_key = json.dumps(payload, ensure_ascii=False, sort_keys=True)
+            try:
                 if cache_key not in cache:
                     cache[cache_key] = judge_with_retry(llm, payload)
                 result = cache[cache_key]
+            except Exception as error:
+                print(f"    skipped: judge evaluation failed: {error}")
+                results.append(build_judge_row(run_row, judge_cfg, None))
+                continue
 
-            score = overall_score(result)
-            results.append(
-                {
-                    "run_id": run_row.get("run_id"),
-                    "pipeline": run_row.get("pipeline"),
-                    "candidate_model": run_row.get("model_name"),
-                    "user_query": run_row.get("user_query"),
-                    "judge_llm_type": judge_cfg.llm_type,
-                    "judge_model_name": judge_cfg.model_name,
-                    "technical_correctness_score": result["technical_correctness"]["score"],
-                    "technical_correctness_justification": result["technical_correctness"][
-                        "justification"
-                    ],
-                    "requirement_coverage_score": result["requirement_coverage"]["score"],
-                    "requirement_coverage_justification": result["requirement_coverage"][
-                        "justification"
-                    ],
-                    "explanation_groundedness_score": result["explanation_groundedness"][
-                        "score"
-                    ],
-                    "explanation_groundedness_justification": result[
-                        "explanation_groundedness"
-                    ]["justification"],
-                    "architectural_integration_score": result["architectural_integration"][
-                        "score"
-                    ],
-                    "architectural_integration_justification": result[
-                        "architectural_integration"
-                    ]["justification"],
-                    "completeness_score": result["completeness"]["score"],
-                    "completeness_justification": result["completeness"]["justification"],
-                    "overall_score": score,
-                    "overall_rating": overall_rating(score),
-                    "overall_summary": result["overall_summary"],
-                }
-            )
+            results.append(build_judge_row(run_row, judge_cfg, result))
 
     return results
 
@@ -644,6 +657,8 @@ def write_judge_summary_sheet(workbook: Any, judge_rows: list[dict[str, Any]]) -
 
     grouped: dict[tuple[str, str, str, str], dict[str, float]] = {}
     for row in judge_rows:
+        if row.get("overall_score") in ("", None):
+            continue
         key = (
             str(row["judge_llm_type"]),
             str(row["judge_model_name"]),

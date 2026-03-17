@@ -16,10 +16,10 @@ PIPELINE_CONFIGS = {
         "one_step": True,
         "based_on_existing_orchestrator": False,
     },
-    # "KB": {
-    #     "one_step": False,
-    #     "based_on_existing_orchestrator": False,
-    # },
+    "kb": {
+        "one_step": False,
+        "based_on_existing_orchestrator": False,
+    },
     "one_step_with_orchestrator": {
         "one_step": False,
         "based_on_existing_orchestrator": True,
