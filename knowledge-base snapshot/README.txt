@@ -5,7 +5,7 @@ This repository contains the scripts required to recreate the Knowledge Graph us
 ## Dataset Statistics
 
 - **123 nodes**
-- **550 relationships**
+- **554 relationships**
 - **19 orchestrators**
 - **4 evaluation dimensions**
 - **94 evaluation criteria**
@@ -50,7 +50,7 @@ MATCH (n)
 RETURN count(n) AS total_nodes;   // should return 123 nodes
 
 MATCH ()-[r]->()
-RETURN count(r) AS total_relationships;   // should return 550 relationships
+RETURN count(r) AS total_relationships;   // should return 554 relationships
 ```
 
 ---
