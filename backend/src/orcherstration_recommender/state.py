@@ -1,4 +1,4 @@
-from typing import Annotated, List, Optional
+from typing import Annotated, Any, Dict, List, Optional
 from typing_extensions import TypedDict
 from langchain_core.messages import AnyMessage
 from langgraph.graph.message import add_messages
@@ -8,6 +8,9 @@ class State(TypedDict, total=False):
 
     # ── Conversation history ──────────────────────────────────────────
     messages: Annotated[List[AnyMessage], add_messages]
+
+    one_step: bool
+    based_on_existing_orchestrator: bool
 
     # ── DB Discovery ─────────────────────────────────────────────────
     db_schema:          list        # [(Label)-[:RELATION]->(Label), ...]
@@ -48,3 +51,9 @@ class State(TypedDict, total=False):
     # ── Control flow ──────────────────────────────────────────────────
     status:                 str         # running | waiting_human | done | failed
     errors:                 List[str]
+
+    # Token usage from all LLM calls in the graph
+    token_usage:            Dict[str, Any]  # {"totals": {...}, "by_node": {...}}
+
+    # Execution timing (sum of node runtimes, excludes human wait time)
+    execution_timing:       Dict[str, Any]  # {"total_active_seconds": float, "by_node": {...}}

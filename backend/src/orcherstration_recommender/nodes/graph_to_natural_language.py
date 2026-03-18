@@ -1,6 +1,7 @@
 import json
 from src.orcherstration_recommender.state import State
 from src.orcherstration_recommender.prompts.prompts_list import GRAPH_TO_NL_PROMPT
+from src.orcherstration_recommender.token_usage import add_token_usage
 from langchain_core.messages import SystemMessage
 
 
@@ -32,6 +33,7 @@ def graph_to_natural_language_node(state: State, llm) -> State:
         return {
             "response_draft": response_draft,
             "status":         "running",
+            "token_usage":    add_token_usage(state, response, "graph_to_natural_language"),
         }
 
     except Exception as e:

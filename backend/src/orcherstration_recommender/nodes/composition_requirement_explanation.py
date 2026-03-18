@@ -1,5 +1,6 @@
 from src.orcherstration_recommender.state import State
 from src.orcherstration_recommender.prompts.prompts_list import COMPOSITION_EXPLANATION_PROMPT
+from src.orcherstration_recommender.token_usage import add_token_usage
 from langchain_core.messages import SystemMessage
 
 def composition_requirement_explanation_node(state: State, llm) -> State:
@@ -24,6 +25,7 @@ def composition_requirement_explanation_node(state: State, llm) -> State:
         return {
             "response_draft": response_draft,
             "status": "waiting_human",
+            "token_usage": add_token_usage(state, response, "composition_requirement_explanation"),
         }
 
     except Exception as e:
