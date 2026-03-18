@@ -15,6 +15,7 @@ def cypher_query_generation_node(state: State) -> State:
     layers             = intent_json.get("layers", [])
     category           = intent_json.get("category", "")
     requirements       = intent_json.get("requirements", [])
+    metrics_filters    = intent_json.get("metrics_filters", [])
     used_orchestrators = intent_json.get("used_orchestrators", [])
 
     if isinstance(layers, str):
@@ -30,6 +31,7 @@ def cypher_query_generation_node(state: State) -> State:
             layers=layers,
             category=category,
             requirements=requirements,
+            metrics_filters=metrics_filters,
             used_orchestrators=used_orchestrators,
             recommendation_policy=recommendation_policy,
             relations=relations,
@@ -49,29 +51,25 @@ def cypher_query_generation_node(state: State) -> State:
 
 
 def _extract_relations(db_schema: list) -> dict:
-    """
-    Extrait depuis db_schema un dict de relations utiles :
-    {
-        "covers":       "COVERS",
-        "has_category": "HAS_CATEGORY",
-        "supports":     "SUPPORTS",
-        "based_on":     "BASED_ON",
-    }
-    Dynamique : on cherche les relations depuis Orchestrator.
-    """
     relations = {}
     for entry in db_schema:
         if entry.get("from") == "Orchestrator":
-            rel = entry.get("relation", "")
-            to  = entry.get("to", "")
+            rel   = entry.get("relation", "")
+            to    = entry.get("to", "")
+            props = entry.get("relation_properties", [])
+
             if to == "Layer":
                 relations["covers"] = rel
             elif to == "Category":
                 relations["has_category"] = rel
-            elif to == "Criterion":
-                relations["supports"] = rel
             elif to == "Orchestrator":
                 relations["based_on"] = rel
+            elif to == "Criterion":
+                if "value" in props:
+                    relations["has_metrics"] = rel
+                else:
+                    relations["supports"] = rel
+
     return relations
 
 
@@ -79,6 +77,7 @@ def _build_minimal_cypher(
     layers: list,
     category: str,
     requirements: list,
+    metrics_filters: list,
     used_orchestrators: list,
     recommendation_policy: str,
     relations: dict,
@@ -87,16 +86,24 @@ def _build_minimal_cypher(
     covers       = relations.get("covers", "COVERS")
     has_category = relations.get("has_category", "HAS_CATEGORY")
     supports     = relations.get("supports", "SUPPORTS")
+    has_metrics  = relations.get("has_metrics", "HAS_METRICS")
     based_on     = relations.get("based_on", "BASED_ON")
 
     conditions    = []
     match_clauses = ["MATCH (o:Orchestrator)"]
 
     # ── Layers ───────────────────────────────────────────────────────
-    for i, layer in enumerate(layers):
-        alias = f"l{i}"
-        match_clauses.append(f"MATCH (o)-[:{covers}]->({alias}:Layer)")
-        conditions.append(f"toLower({alias}.name) = toLower('{layer}')")
+    if recommendation_policy == "composition_allowed" and layers:
+        # Mode composition : au moins un layer suffit
+        match_clauses.append(f"MATCH (o)-[:{covers}]->(l:Layer)")
+        layers_list = str([layer.lower() for layer in layers])
+        conditions.append(f"toLower(l.name) IN {layers_list}")
+    else:
+        # Mode normal : tous les layers requis simultanément
+        for i, layer in enumerate(layers):
+            alias = f"l{i}"
+            match_clauses.append(f"MATCH (o)-[:{covers}]->({alias}:Layer)")
+            conditions.append(f"toLower({alias}.name) = toLower('{layer}')")
 
     # ── Category ─────────────────────────────────────────────────────
     if category:
@@ -109,11 +116,54 @@ def _build_minimal_cypher(
         else:
             conditions.append(f"toLower(cat.name) = toLower('{category}')")
 
-    # ── Requirements ─────────────────────────────────────────────────
-    for i, req in enumerate(requirements):
-        alias = f"cr{i}"
-        match_clauses.append(f"MATCH (o)-[:{supports}]->({alias}:Criterion)")
-        conditions.append(f"toLower({alias}.name) = toLower('{req}')")
+    # ── Requirements (SUPPORTS) ───────────────────────────────────────
+    if recommendation_policy == "composition_allowed" and requirements:
+        # Mode composition : au moins un requirement suffit (OR)
+        match_clauses.append(f"MATCH (o)-[:{supports}]->(cr:Criterion)")
+        req_list = str([req.lower() for req in requirements])
+        conditions.append(f"toLower(cr.name) IN {req_list}")
+    else:
+        # Mode normal : tous les requirements requis simultanément (AND)
+        for i, req in enumerate(requirements):
+            alias = f"cr{i}"
+            match_clauses.append(f"MATCH (o)-[:{supports}]->({alias}:Criterion)")
+            conditions.append(f"toLower({alias}.name) = toLower('{req}')")
+
+    # ── Metrics filters (HAS_METRICS) ────────────────────────────────
+    for i, mf in enumerate(metrics_filters):
+        criterion_name = mf.get("criterion_name", "")
+        operator       = mf.get("operator", "")
+        alias_node     = f"mc{i}"
+        alias_rel      = f"rm{i}"
+
+        match_clauses.append(
+            f"MATCH (o)-[{alias_rel}:{has_metrics}]->({alias_node}:Criterion)"
+        )
+        conditions.append(
+            f"toLower({alias_node}.name) = toLower('{criterion_name}')"
+        )
+
+        if operator == ">=":
+            value = mf.get("value")
+            conditions.append(f"toInteger({alias_rel}.value) >= {value}")
+
+        elif operator == "<=":
+            value = mf.get("value")
+            conditions.append(f"toInteger({alias_rel}.value) <= {value}")
+
+        elif operator == "==":
+            value = mf.get("value")
+            conditions.append(
+                f"toLower(toString({alias_rel}.value)) = toLower('{value}')"
+            )
+
+        elif operator == "contains_any":
+            values = mf.get("values", [])
+            or_conditions = " OR ".join([
+                f"toLower(toString({alias_rel}.value)) CONTAINS toLower('{v}')"
+                for v in values
+            ])
+            conditions.append(f"({or_conditions})")
 
     # ── Context uses ─────────────────────────────────────────────────
     if used_orchestrators:
@@ -128,6 +178,6 @@ def _build_minimal_cypher(
         based_on_list = "', '".join(used_orchestrators)
         query += f"\nORDER BY CASE WHEN base.name IN ['{based_on_list}'] THEN 0 ELSE 1 END"
 
-    query += "\nRETURN o"
+    query += "\nRETURN DISTINCT o"
 
     return query

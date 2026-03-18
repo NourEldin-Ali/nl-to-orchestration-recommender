@@ -27,6 +27,8 @@ def graph_to_natural_language_node(state: State, llm) -> State:
         response = llm.invoke(messages)
         response_draft = response.content.strip()
 
+        print(f"\n[DEBUG response_draft]:\n{response_draft}")
+
         return {
             "response_draft": response_draft,
             "status":         "running",

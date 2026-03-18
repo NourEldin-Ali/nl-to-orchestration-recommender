@@ -12,6 +12,11 @@ def after_cypher_query_execution(state: State) -> str:
     minimal_subgraph = state.get("minimal_subgraph", [])
     attempt_try      = state.get("attempt_try", 1)
 
+    print(f"\n[DEBUG after_cypher_query_execution]:")
+    print(f"  minimal_subgraph length : {len(minimal_subgraph)}")
+    print(f"  minimal_subgraph        : {minimal_subgraph}")
+    print(f"  attempt_try             : {attempt_try}")
+
     if not minimal_subgraph and attempt_try == 1:
         return "composition_requirement_explanation"
     return "intent_coverage_verifier"
@@ -20,11 +25,14 @@ def after_cypher_query_execution(state: State) -> str:
 def after_intent_graph_update(state: State) -> str:
     """
     Edge 6 — after intent_graph_update_node
-    If composition_not_allowed → END
+    If composition_not_allowed → intent_coverage_verifier (coverage gap explanation)
     Else → cypher_query_generation_node (re-run with updated policy)
     """
     recommendation_policy = state.get("recommendation_policy", "composition_not_allowed")
 
+    print(f"\n[DEBUG after_intent_graph_update]:")
+    print(f"  recommendation_policy : {recommendation_policy}")
+
     if recommendation_policy == "composition_not_allowed":
-        return "end"
+        return "intent_coverage_verifier"
     return "cypher_query_generation"

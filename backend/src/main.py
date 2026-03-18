@@ -54,10 +54,21 @@ def run(user_query: str, thread_id: str = "thread-1"):
 if __name__ == "__main__":
 
     # Scenario 1 — Simple case
-    # run("I need an open-source orchestrator to deploy my application in the cloud.")
+    #run("I need an open-source orchestrator to deploy my application in the cloud.")
 
     # Scenario 2 — Edge extension
-    run("We already run Kubernetes in the cloud and want to extend orchestration to edge nodes.")
+    #run("I am planning to prepare the infrastructure for my cloud application from scratch. I need a cloud orchestrator that supports multi-cloud deployment across AWS and Azure, and that can provision and configure the infrastructure.")
 
     # Scenario 3 — Telemedicine composition
-    #run("I am developing a telemedicine application for connected ambulances...")
+    #run("I am a doctoral student looking for recent and recognized cloud-edge orchestration frameworks.")
+
+
+    # Scenario 4
+    #run("We already run Kubernetes in the cloud and want to extend orchestration to edge nodes, while supporting deployment, monitoring, and runtime reconfiguration across cloud and edge")
+
+
+    # Scenario 5
+    run("I am developing a telemedicine application for connected ambulances...")
+
+    # Scenario 6
+    #run("I want one single tool that handles provisioning, configuration, service orchestration, workflow orchestration, and covers cloud, edge, and IoT.")

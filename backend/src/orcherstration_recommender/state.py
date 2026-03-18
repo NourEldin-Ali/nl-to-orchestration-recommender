@@ -18,6 +18,7 @@ class State(TypedDict, total=False):
     detected_layers:        list        # output node 1
     detected_category:      str         # output node 2
     detected_requirements:  list        # output node 3
+    detected_metrics_filters:    list   # output node 3.5
     detected_used_orchestrators: list   # output node 4
     intent_json:            dict        # {layers, category, requirements, used_orchestrators} — assemblé algo
 

@@ -7,6 +7,9 @@ from langchain_core.messages import SystemMessage
 def requirements_extraction_node(state: State, llm) -> State:
     """
     Intent Extraction — Node 3 | Requirements Extraction
+    Two-mode logic:
+      - MODE 1 (direct)   : explicit requirements found in user query → used as-is
+      - MODE 2 (inferred) : query too vague → contextual inference from vocabulary
     Reads  : user_query, db_vocabulary, detected_layers, detected_category
     Writes : detected_requirements
     """
@@ -14,7 +17,7 @@ def requirements_extraction_node(state: State, llm) -> State:
     db_vocabulary     = state.get("db_vocabulary", {})
     detected_layers   = state.get("detected_layers", [])
     detected_category = state.get("detected_category", "")
-    criteria          = db_vocabulary.get("criterions", [])
+    criteria          = db_vocabulary.get("criterion", [])
 
     messages = [
         SystemMessage(content=REQUIREMENTS_EXTRACTION_PROMPT.format(
@@ -39,8 +42,13 @@ def requirements_extraction_node(state: State, llm) -> State:
 
         result = json.loads(raw)
         detected_requirements = result.get("requirements", [])
+        mode                  = result.get("mode", "unknown")
 
-        print(f"\n[DEBUG detected_requirements]: {detected_requirements}")
+        print(f"\n[DEBUG detected_requirements] (mode={mode}): {detected_requirements}")
+
+        # Sécurité : si inféré et toujours vide, on logue l'anomalie
+        if not detected_requirements:
+            print(f"[WARNING requirements_extraction]: LLM returned empty requirements even in mode '{mode}'")
 
         return {
             "detected_requirements": detected_requirements,

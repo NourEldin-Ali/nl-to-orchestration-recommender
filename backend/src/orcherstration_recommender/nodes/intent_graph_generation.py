@@ -99,20 +99,23 @@ def intent_graph_generation_node(state: State) -> State:
 
 
 def _extract_relations(db_schema: list) -> dict:
-    """
-    Extrait depuis db_schema les relations pertinentes depuis Orchestrator.
-    """
     relations = {}
     for entry in db_schema:
         if entry.get("from") == "Orchestrator":
-            rel = entry.get("relation", "")
-            to  = entry.get("to", "")
+            rel   = entry.get("relation", "")
+            to    = entry.get("to", "")
+            props = entry.get("relation_properties", [])
+
             if to == "Layer":
                 relations["covers"] = rel
             elif to == "Category":
                 relations["has_category"] = rel
-            elif to == "Criterion":
-                relations["supports"] = rel
             elif to == "Orchestrator":
                 relations["based_on"] = rel
+            elif to == "Criterion":
+                if "value" in props:
+                    relations["has_metrics"] = rel
+                else:
+                    relations["supports"] = rel
+
     return relations

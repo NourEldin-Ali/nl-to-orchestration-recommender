@@ -13,7 +13,7 @@ def category_extraction_node(state: State, llm) -> State:
     user_query      = state.get("user_query", "")
     db_vocabulary   = state.get("db_vocabulary", {})
     detected_layers = state.get("detected_layers", [])
-    categories      = db_vocabulary.get("categories", [])
+    categories      = db_vocabulary.get("category", [])
 
     messages = [
         SystemMessage(content=CATEGORY_EXTRACTION_PROMPT.format(

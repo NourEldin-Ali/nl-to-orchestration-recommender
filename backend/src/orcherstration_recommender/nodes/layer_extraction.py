@@ -12,7 +12,7 @@ def layer_extraction_node(state: State, llm) -> State:
     """
     user_query   = state.get("user_query", "")
     db_vocabulary = state.get("db_vocabulary", {})
-    layers       = db_vocabulary.get("layers", [])
+    layers       = db_vocabulary.get("layer", [])
 
     messages = [
         SystemMessage(content=LAYER_EXTRACTION_PROMPT.format(

@@ -18,23 +18,34 @@ def db_schema_discovery_node(state: State) -> State:
         with driver.session() as session:
             result = session.run("""
                 MATCH (a)-[r]->(b)
-                RETURN DISTINCT labels(a)[0] AS from, type(r) AS relation, labels(b)[0] AS to
+                RETURN DISTINCT labels(a)[0] AS from, type(r) AS relation, labels(b)[0] AS to, keys(r) AS relation_properties
             """)
 
-            db_schema = [
+            db_schema_raw = [
                 {
-                    "from":     record["from"],
-                    "relation": record["relation"],
-                    "to":       record["to"],
+                    "from":                record["from"],
+                    "relation":            record["relation"],
+                    "to":                  record["to"],
+                    "relation_properties": list(record["relation_properties"]),
                 }
                 for record in result
                 if record["from"] not in EXCLUDED_LABELS
                 and record["to"] not in EXCLUDED_LABELS
             ]
 
+        # ── Dédupliquer par (from, relation, to) ─────────────────────
+        seen      = set()
+        db_schema = []
+        for entry in db_schema_raw:
+            key = (entry["from"], entry["relation"], entry["to"])
+            if key not in seen:
+                seen.add(key)
+                db_schema.append(entry)
+
         print(f"\n[DEBUG db_schema]:")
         for entry in db_schema:
-            print(f"  ({entry['from']})-[:{entry['relation']}]->({entry['to']})")
+            props = entry.get("relation_properties", [])
+            print(f"  ({entry['from']})-[:{entry['relation']}]->({entry['to']}) props={props}")
 
         return {
             "db_schema": db_schema,

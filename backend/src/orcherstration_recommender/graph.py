@@ -11,6 +11,7 @@ from src.orcherstration_recommender.nodes.db_vocabulary_construction import db_v
 from src.orcherstration_recommender.nodes.layer_extraction import layer_extraction_node
 from src.orcherstration_recommender.nodes.category_extraction import category_extraction_node
 from src.orcherstration_recommender.nodes.requirements_extraction import requirements_extraction_node
+from src.orcherstration_recommender.nodes.dimension_inference import dimension_inference_node
 from src.orcherstration_recommender.nodes.used_orchestrators_extraction import used_orchestrators_extraction_node
 from src.orcherstration_recommender.nodes.intent_extraction import intent_combination_node
 from src.orcherstration_recommender.nodes.intent_graph_generation import intent_graph_generation_node
@@ -19,6 +20,7 @@ from src.orcherstration_recommender.nodes.cypher_query_execution import cypher_q
 from src.orcherstration_recommender.nodes.composition_requirement_explanation import composition_requirement_explanation_node
 from src.orcherstration_recommender.nodes.intent_graph_update import intent_graph_update_node
 from src.orcherstration_recommender.nodes.intent_coverage_verifier import intent_coverage_verifier_node
+from src.orcherstration_recommender.nodes.ranking import candidates_ranking_node
 from src.orcherstration_recommender.nodes.graph_to_natural_language import graph_to_natural_language_node
 from src.orcherstration_recommender.nodes.intent_aligned_justification import intent_aligned_justification_node
 
@@ -39,6 +41,7 @@ def build_graph():
     builder.add_node("layer_extraction",                    partial(layer_extraction_node, llm=llm))
     builder.add_node("category_extraction",                 partial(category_extraction_node, llm=llm))
     builder.add_node("requirements_extraction",             partial(requirements_extraction_node, llm=llm))
+    builder.add_node("dimension_inference",                 partial(dimension_inference_node, llm=llm))
     builder.add_node("used_orchestrators_extraction",       partial(used_orchestrators_extraction_node, llm=llm))
     builder.add_node("intent_combination",                  intent_combination_node)
     builder.add_node("intent_graph_generation",             intent_graph_generation_node)
@@ -47,6 +50,7 @@ def build_graph():
     builder.add_node("composition_requirement_explanation", partial(composition_requirement_explanation_node, llm=llm))
     builder.add_node("intent_graph_update",                 partial(intent_graph_update_node, llm=llm))
     builder.add_node("intent_coverage_verifier",            intent_coverage_verifier_node)
+    builder.add_node("candidates_ranking",                  candidates_ranking_node)
     builder.add_node("graph_to_natural_language",           partial(graph_to_natural_language_node, llm=llm))
     builder.add_node("intent_aligned_justification",        partial(intent_aligned_justification_node, llm=llm))
 
@@ -58,13 +62,15 @@ def build_graph():
     builder.add_edge("db_vocabulary",                       "layer_extraction")
     builder.add_edge("layer_extraction",                    "category_extraction")
     builder.add_edge("category_extraction",                 "requirements_extraction")
-    builder.add_edge("requirements_extraction",             "used_orchestrators_extraction")
+    builder.add_edge("requirements_extraction",             "dimension_inference")
+    builder.add_edge("dimension_inference",                 "used_orchestrators_extraction")
     builder.add_edge("used_orchestrators_extraction",       "intent_combination")
     builder.add_edge("intent_combination",                  "intent_graph_generation")
     builder.add_edge("intent_graph_generation",             "cypher_query_generation")
     builder.add_edge("cypher_query_generation",             "cypher_query_execution")
     builder.add_edge("composition_requirement_explanation", "intent_graph_update")
-    builder.add_edge("intent_coverage_verifier",            "graph_to_natural_language")
+    builder.add_edge("intent_coverage_verifier",            "candidates_ranking")
+    builder.add_edge("candidates_ranking",                  "graph_to_natural_language")
     builder.add_edge("graph_to_natural_language",           "intent_aligned_justification")
     builder.add_edge("intent_aligned_justification",        END)
 
@@ -82,8 +88,8 @@ def build_graph():
         "intent_graph_update",
         after_intent_graph_update,
         {
-            "cypher_query_generation": "cypher_query_generation",
-            "end":                     END,
+            "cypher_query_generation":  "cypher_query_generation",
+            "intent_coverage_verifier": "intent_coverage_verifier",
         }
     )
 

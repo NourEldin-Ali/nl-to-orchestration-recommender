@@ -43,7 +43,7 @@ def db_vocabulary_node(state: State) -> State:
                 values = [record["name"] for record in result]
 
                 if values:
-                    db_vocabulary[label.lower() + "s"] = values
+                    db_vocabulary[label.lower()] = values
 
         print(f"\n[DEBUG db_vocabulary]:")
         for key, values in db_vocabulary.items():

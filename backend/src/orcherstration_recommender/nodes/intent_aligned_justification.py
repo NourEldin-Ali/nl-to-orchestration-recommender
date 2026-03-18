@@ -8,15 +8,21 @@ def intent_aligned_justification_node(state: State, llm) -> State:
     Component 1 — SLM | Intent-Aligned Justification
     Reads  : response_draft, coverage, final_recommendation, user_query
     Writes : final_response
-             - If coverage FULL    → justified recommendation response
-             - If coverage PARTIAL | NONE → coverage-gap explanation response
+             - If coverage FULL                → justified recommendation response
+             - If final_recommendation is CompositionOfTools → justified recommendation response
+               (composition case: PARTIAL coverage is expected and normal)
+             - If coverage PARTIAL | NONE (and not CompositionOfTools) → coverage-gap explanation response
     """
-    user_query     = state.get("user_query", "")
-    response_draft = state.get("response_draft", "")
-    coverage       = state.get("coverage", "NONE")
+    user_query           = state.get("user_query", "")
+    response_draft       = state.get("response_draft", "")
+    coverage             = state.get("coverage", "NONE")
+    final_recommendation = state.get("final_recommendation", "None")
 
-    # ── Select prompt based on coverage ──────────────────────────────
-    if coverage == "FULL":
+    # ── Select prompt based on coverage and final_recommendation ─────
+    # CompositionOfTools: PARTIAL coverage is expected and normal —
+    # each tool covers a subset; collectively they satisfy the intent.
+    # → use the justified recommendation prompt, not the gap explanation.
+    if coverage == "FULL" or final_recommendation == "CompositionOfTools":
         prompt = JUSTIFIED_RECOMMENDATION_PROMPT.format(
             user_query=user_query,
             response_draft=response_draft,
