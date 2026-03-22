@@ -128,7 +128,6 @@ class LLMConnector:
             temperature=self.temperature,
             api_key=self.api_key,
             base_url=self.endpoint,
-            max_retries=self.max_retries,
             max_tokens=8192,
             seed=1234
         )

@@ -30,3 +30,34 @@ OLLAMA_ENDPOINT=
 LLM_TEMPERATURE=
 LLM_MODEL_NAME=
 ```
+
+## LLM-as-Judge
+
+Edit `DEFAULT_GROUND_TRUTH` and `DEFAULT_JUDGE_LLM_CONFIGS` directly in `src/llm_as_judge.py`.
+Each ground-truth entry only needs:
+
+- `user_query`
+- `expected_answer`
+
+Run it from the `backend` directory:
+
+```bash
+python -m src.llm_as_judge \
+  --input-excel ../output/evaluation_results_20260312_092928.xlsx
+```
+
+You can also pass judge models explicitly:
+
+```bash
+python -m src.llm_as_judge \
+  --input-excel ../output/evaluation_results_20260312_092928.xlsx \
+  --llm openai:gpt-4.1-mini \
+  --llm nvidia:qwen/qwen2-7b-instruct
+```
+
+The output workbook contains:
+
+- original evaluation sheets
+- `judge_runs`
+- `judge_summary`
+- `judge_config`

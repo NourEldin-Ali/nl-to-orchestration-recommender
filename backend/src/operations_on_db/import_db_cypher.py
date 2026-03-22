@@ -1,23 +1,17 @@
-import json
 import sys
 import os
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 from config.neo4j_config import Neo4jConnector
 
-# Fichier JSON exporté depuis Aura
-JSON_FILE = "neo4j_query_table_data_2026-3-10.json"
+CYPHER_FILE = "02_data.cypher"
 
-def import_to_local(json_file):
-    # Lire le JSON et extraire le Cypher
-    with open(json_file, "r") as f:
-        data = json.load(f)
+def import_to_local(cypher_file):
+    with open(cypher_file, "r") as f:
+        cypher = f.read()
     
-    cypher = data[0]["cypherStatements"]
-    
-    # Découper en statements individuels (séparés par ;\n)
+    # Découper en statements individuels
     statements = [s.strip() for s in cypher.split(";\n") if s.strip()]
     
-    # Se connecter à Neo4j local via le connecteur
     driver = Neo4jConnector().get_driver()
     
     with driver.session() as session:
@@ -32,4 +26,4 @@ def import_to_local(json_file):
     print("\nImport terminé !")
 
 if __name__ == "__main__":
-    import_to_local(JSON_FILE)
+    import_to_local(CYPHER_FILE)
