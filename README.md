@@ -6,7 +6,7 @@ This repository contains the implementation of **OrchRec**, a multi-agent framew
 
 ## Evaluation Results
 
-The complete evaluation results, including LLM-as-a-judge and human evaluation data, are available in the Evaluation result folder. 
+The complete evaluation results, including LLM-as-a-judge and human evaluation data, are available in the Evaluation results folder. 
 The results include:
 - LLM-as-a-judge evaluation (multiple configurations and scenarios)
 - Human evaluation (expert-based assessment)
