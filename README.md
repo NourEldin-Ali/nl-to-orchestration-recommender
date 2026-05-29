@@ -1,8 +1,10 @@
 ## A Hybrid Approach for Intent-Driven Recommendation of CEI Orchestration Frameworks
 
-This repository accompanies our paper accepted at The IEEE International Conference on Cloud Computing (IEEE CLOUD 2026): .
+This repository accompanies our paper accepted at the **IEEE International Conference on Cloud Computing (IEEE CLOUD 2026)**.
 
-**Authors**: Chaimaa Zidane, Hayet Brabra, Imen Jerbi, Elimane Yassine Seidou, Ali Nour Eldin, Mohamed Sellami, and Walid Gaaloul.
+**Authors:** Chaimaa Zidane, Hayet Brabra, Imen Jerbi, Elimane Yassine Seidou, Ali Nour Eldin, Mohamed Sellami, and Walid Gaaloul.
+
+The paper proposes a hybrid intent-driven approach for recommending orchestration frameworks across Cloud–Edge–IoT environments. It combines natural-language intent interpretation with Knowledge Graph-based retrieval and intent coverage evaluation to generate reliable, transparent, and requirement-aligned recommendations. The approach supports the identification of a single suitable framework, a combination of complementary frameworks, or coverage gaps when no feasible solution fully satisfies the user requirements.
 
 ---
 
