@@ -1,6 +1,8 @@
-## OrchRec: Intent-Driven Orchestration Recommendation
+## A Hybrid Approach for Intent-Driven Recommendation of CEI Orchestration Frameworks
 
-This repository contains the implementation of **OrchRec**, a multi-agent framework for intent-driven recommendation of orchestration solutions across the Cloud–Edge–IoT continuum.
+This repository accompanies our paper accepted at IEEE CLOUD 2026: The IEEE International Conference on Cloud Computing.
+
+**Authors**: Chaimaa Zidane, Hayet Brabra, Imen Jerbi, Elimane Yassine Seidou, Ali Nour Eldin, Mohamed Sellami, and Walid Gaaloul.
 
 ---
 
