@@ -1,6 +1,6 @@
 ## A Hybrid Approach for Intent-Driven Recommendation of CEI Orchestration Frameworks
 
-This repository accompanies our paper accepted at IEEE CLOUD 2026: The IEEE International Conference on Cloud Computing.
+This repository accompanies our paper accepted at The IEEE International Conference on Cloud Computing (IEEE CLOUD 2026): .
 
 **Authors**: Chaimaa Zidane, Hayet Brabra, Imen Jerbi, Elimane Yassine Seidou, Ali Nour Eldin, Mohamed Sellami, and Walid Gaaloul.
 
